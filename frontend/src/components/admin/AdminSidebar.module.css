@@ -1,0 +1,97 @@
+.sidebar {
+  width: var(--admin-sidebar-width);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-hairline);
+  overflow-y: auto;
+}
+
+.title {
+  padding: var(--spacing-lg) var(--spacing-md);
+  font: var(--font-heading-5);
+  color: var(--color-charcoal);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.nav {
+  flex: 1;
+  padding: var(--spacing-xs) 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Group ── */
+.group {
+  /* wrapper only */
+}
+
+.groupTitle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 10px var(--spacing-md);
+  font: var(--font-body-sm-medium);
+  color: var(--color-charcoal);
+  text-align: left;
+  transition: background var(--transition-fast);
+  border-radius: 0;
+}
+.groupTitle:hover {
+  background: var(--color-hairline-soft);
+}
+
+.arrow {
+  font-size: 8px;
+  color: var(--color-stone);
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.groupChildren {
+  padding: 2px 0;
+  background: var(--color-surface-soft);
+}
+
+/* ── Child item ── */
+.childItem {
+  width: 100%;
+  display: block;
+  padding: 8px var(--spacing-md) 8px var(--spacing-xxxl);
+  font: var(--font-body-sm);
+  color: var(--color-slate);
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+.childItem:hover {
+  background: var(--color-hairline-soft);
+  color: var(--color-ink);
+}
+.childItem.active {
+  background: var(--color-card-lavender);
+  color: var(--color-primary-deep);
+  font-weight: 500;
+}
+
+/* ── Single item (no children) ── */
+.singleItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 10px var(--spacing-md);
+  font: var(--font-body-sm-medium);
+  color: var(--color-charcoal);
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+.singleItem:hover {
+  background: var(--color-hairline-soft);
+}
+.singleItem.active {
+  background: var(--color-card-lavender);
+  color: var(--color-primary-deep);
+}

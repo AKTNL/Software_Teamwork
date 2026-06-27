@@ -1,0 +1,25 @@
+.panel {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background: var(--color-canvas);
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-xxl);
+  background: var(--color-canvas);
+}
+
+.backLink {
+  display: inline-block;
+  font: var(--font-body-sm-medium);
+  color: var(--color-slate);
+  margin-bottom: var(--spacing-lg);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+.backLink:hover {
+  color: var(--color-primary);
+}

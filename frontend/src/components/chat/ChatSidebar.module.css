@@ -1,0 +1,105 @@
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-hairline);
+}
+
+.head {
+  padding: var(--spacing-lg) var(--spacing-md);
+  border-bottom: 1px solid var(--color-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.title {
+  font: var(--font-heading-5);
+  color: var(--color-charcoal);
+}
+
+.newBtn {
+  width: 100%;
+  padding: 10px 16px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font: var(--font-button);
+  border-radius: var(--rounded-md);
+  transition: background var(--transition-fast);
+}
+.newBtn:hover {
+  background: var(--color-primary-pressed);
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-xs);
+}
+
+.empty {
+  padding: var(--spacing-xl);
+  text-align: center;
+  font: var(--font-body-sm);
+  color: var(--color-muted);
+}
+
+.item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--rounded-md);
+  transition: background var(--transition-fast);
+  position: relative;
+  text-align: left;
+  gap: 2px;
+}
+.item:hover {
+  background: var(--color-hairline-soft);
+}
+.item.active {
+  background: var(--color-card-lavender);
+}
+
+.itemTitle {
+  font: var(--font-body-sm-medium);
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  padding-right: 20px;
+}
+
+.itemMeta {
+  font: var(--font-caption);
+  color: var(--color-steel);
+}
+
+.deleteBtn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--rounded-xs);
+  font-size: 11px;
+  color: var(--color-muted);
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+.item:hover .deleteBtn {
+  opacity: 1;
+}
+.deleteBtn:hover {
+  background: var(--color-error);
+  color: white;
+}

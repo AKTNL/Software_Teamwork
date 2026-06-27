@@ -1,0 +1,124 @@
+/* ============================================================
+   Notion-Inspired Design Tokens
+   Source: DESIGN.md (awesome-design-md)
+   ============================================================ */
+
+:root {
+  /* ── Colors ── */
+  --color-primary: #5645d4;
+  --color-primary-pressed: #4534b3;
+  --color-primary-deep: #3a2a99;
+  --color-on-primary: #ffffff;
+
+  --color-brand-navy: #0a1530;
+  --color-brand-navy-deep: #070f24;
+  --color-brand-navy-mid: #1a2a52;
+
+  --color-link-blue: #0075de;
+  --color-link-blue-pressed: #005bab;
+
+  /* Accent colors */
+  --color-brand-orange: #dd5b00;
+  --color-brand-pink: #ff64c8;
+  --color-brand-purple: #7b3ff2;
+  --color-brand-purple-300: #d6b6f6;
+  --color-brand-teal: #2a9d99;
+  --color-brand-green: #1aae39;
+  --color-brand-yellow: #f5d75e;
+
+  /* Card tints */
+  --color-card-peach: #ffe8d4;
+  --color-card-rose: #fde0ec;
+  --color-card-mint: #d9f3e1;
+  --color-card-lavender: #e6e0f5;
+  --color-card-sky: #dcecfa;
+  --color-card-yellow: #fef7d6;
+  --color-card-cream: #f8f5e8;
+  --color-card-gray: #f0eeec;
+
+  /* Surfaces */
+  --color-canvas: #ffffff;
+  --color-surface: #f6f5f4;
+  --color-surface-soft: #fafaf9;
+
+  /* Hairlines (borders) */
+  --color-hairline: #e5e3df;
+  --color-hairline-soft: #ede9e4;
+  --color-hairline-strong: #c8c4be;
+
+  /* Ink (text) */
+  --color-ink-deep: #000000;
+  --color-ink: #1a1a1a;
+  --color-charcoal: #37352f;
+  --color-slate: #5d5b54;
+  --color-steel: #787671;
+  --color-stone: #a4a097;
+  --color-muted: #bbb8b1;
+
+  --color-on-dark: #ffffff;
+  --color-on-dark-muted: #a4a097;
+
+  /* Semantic */
+  --color-success: #1aae39;
+  --color-warning: #dd5b00;
+  --color-error: #e03131;
+
+  /* ── Typography ── */
+  --font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --font-hero-display: 600 80px/1.05 var(--font-family);
+  --font-display-lg: 600 56px/1.10 var(--font-family);
+  --font-heading-1: 600 48px/1.15 var(--font-family);
+  --font-heading-2: 600 36px/1.20 var(--font-family);
+  --font-heading-3: 600 28px/1.25 var(--font-family);
+  --font-heading-4: 600 22px/1.30 var(--font-family);
+  --font-heading-5: 600 18px/1.40 var(--font-family);
+  --font-subtitle: 400 18px/1.50 var(--font-family);
+  --font-body-md: 400 16px/1.55 var(--font-family);
+  --font-body-md-medium: 500 16px/1.55 var(--font-family);
+  --font-body-sm: 400 14px/1.50 var(--font-family);
+  --font-body-sm-medium: 500 14px/1.50 var(--font-family);
+  --font-caption: 400 13px/1.40 var(--font-family);
+  --font-caption-bold: 600 13px/1.40 var(--font-family);
+  --font-micro: 500 12px/1.40 var(--font-family);
+  --font-micro-uppercase: 600 11px/1.40 var(--font-family);
+  --font-button: 500 14px/1.30 var(--font-family);
+
+  /* ── Border Radius ── */
+  --rounded-xs: 4px;
+  --rounded-sm: 6px;
+  --rounded-md: 8px;
+  --rounded-lg: 12px;
+  --rounded-xl: 16px;
+  --rounded-xxl: 20px;
+  --rounded-xxxl: 24px;
+  --rounded-full: 9999px;
+
+  /* ── Spacing ── */
+  --spacing-xxs: 4px;
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+  --spacing-xxl: 32px;
+  --spacing-xxxl: 40px;
+  --spacing-section-sm: 48px;
+  --spacing-section: 64px;
+  --spacing-section-lg: 96px;
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.10);
+
+  /* ── Sidebar ── */
+  --sidebar-width: 280px;
+  --admin-sidebar-width: 260px;
+
+  /* ── Transitions ── */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+}
