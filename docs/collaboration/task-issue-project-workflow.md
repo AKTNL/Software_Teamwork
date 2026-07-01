@@ -26,8 +26,9 @@ Task Issue Sync 自动同步到 GitHub Project `Software Teamwork`。任务正�
 3. 判断任务归属，选择编号前缀。
 4. 按任务类型选择 GitHub Issue 模板并写完整任务书正文；测试组 `T-*` 任务使用 Test
    Task Issue 模板。
-5. 测试组 `T-*` 任务必须要求主责人按 `docs/testing/templates/test-report-template.md`
-   生成报告，并归档到 `docs/testing/reports/YYYY-MM-DD/`。
+5. 测试组 `T-*` 任务必须要求主责人留下测试证据：纯单元/组件自动化可在 issue/PR 中保留
+   轻量执行记录，复杂测试必须按 `docs/testing/templates/test-report-template.md` 生成报告，
+   并归档到 `docs/testing/reports/YYYY-MM-DD/`。
 6. 补齐 `依赖任务`、`阻塞任务`、`并行任务` 和 `依赖原因`。
 7. 逐张校对任务书。
 8. 先发布上游任务，再发布下游任务。
@@ -137,8 +138,10 @@ git merge-base --is-ancestor upstream/develop HEAD
 权限/安全边界、owner service 重构、产品/架构决策、多模块行为变更等大问题，应新建独立
 issue 指派给对应 owner 小组，并在测试任务中链接。
 
-每个 `T-*` 测试任务还必须生成一份完整测试报告。报告以
-`docs/testing/templates/test-report-template.md` 为模板，按实际执行日期保存到
+每个 `T-*` 测试任务还必须留下测试证据。纯单元测试、组件测试或静态检查任务默认并入
+自动化，可在 issue/PR 中保留轻量执行记录；涉及集成测试、E2E、权限/安全边界、
+文件/Parser 边界、migration、环境验收、人工验收、回归测试或缺陷复现时，必须以
+`docs/testing/templates/test-report-template.md` 为模板生成完整报告，按实际执行日期保存到
 `docs/testing/reports/YYYY-MM-DD/`，并在测试 issue 和 PR 中链接。旧的 `docs/tests/`
 目录不再用于新增报告。
 
@@ -336,7 +339,7 @@ gh issue view <number> --repo Sakayori-Iroha-168/Software_Teamwork --json body,l
 - [ ] 编号前缀和 `主责小组` 匹配。
 - [ ] `T-*` 仅用于测试交付；测试发现的开发修复或优化需求已归到对应开发小组。
 - [ ] `T-*` 测试任务已使用 Test Task Issue 模板，或正文已包含“测试执行与缺陷处理规则”。
-- [ ] `T-*` 测试任务已要求按模板生成测试报告，并归档到 `docs/testing/reports/YYYY-MM-DD/`。
+- [ ] `T-*` 测试任务已按测试类型要求留下证据：纯单元/组件自动化保留轻量记录，复杂测试按模板生成报告并归档到 `docs/testing/reports/YYYY-MM-DD/`。
 - [ ] 正文字段完整，能被 Task Issue Sync 解析。
 - [ ] `预期工时（小时数）` 已填写非负数字；暂不能估算时写 `0`。
 - [ ] `实际工时（小时数）` 初始可写 `0`，完成后通过评论 `实际工时：2` 或 `实际工时：0.5` 回填。
