@@ -1,5 +1,13 @@
 const FALLBACK_APP_VERSION = '0.0.0'
+const APP_FRESHNESS_CACHE_KEY = 'software-teamwork:app-version:freshness'
+const APP_FRESHNESS_CACHE_TTL_MS = 5 * 60 * 1000
 const GITHUB_REPO_API_URL = 'https://api.github.com/repos/Sakayori-Iroha-168/Software_Teamwork'
+const GITHUB_REQUEST_INIT: RequestInit = {
+  cache: 'default',
+  headers: {
+    Accept: 'application/vnd.github+json',
+  },
+}
 
 export const APP_UPDATE_COMMAND = 'git fetch upstream --prune && git rebase upstream/develop'
 
@@ -26,6 +34,19 @@ type GitHubCompareResponse = {
   status?: unknown
 }
 
+type SerializedAppFreshnessResult = Omit<AppFreshnessResult, 'checkedAt'> & {
+  checkedAt: string
+}
+
+type AppFreshnessCacheEntry = {
+  cachedAt: number
+  cacheKey: string
+  result: SerializedAppFreshnessResult
+}
+
+let memoryFreshnessCache: AppFreshnessCacheEntry | null = null
+let inFlightFreshnessCheck: { cacheKey: string; promise: Promise<AppFreshnessResult> } | null = null
+
 export function formatAppVersion(version: string | null | undefined) {
   const versionNumber = version?.trim().replace(/^v/i, '').trim()
 
@@ -42,6 +63,135 @@ function normalizeSha(value: string) {
 
 function shortSha(value: string) {
   return value.slice(0, 8) || 'unknown'
+}
+
+function warnGitHubFreshnessFallback(reason: string) {
+  console.warn(`[app-version] ${reason}`)
+}
+
+function getAppVersionStorage() {
+  if (typeof window === 'undefined') return null
+
+  try {
+    return window.sessionStorage
+  } catch {
+    return null
+  }
+}
+
+function freshnessCacheKey(currentSha: string) {
+  return `${GITHUB_REPO_API_URL}:develop:${normalizeSha(currentSha) || 'unknown'}`
+}
+
+function isFreshCacheEntry(entry: AppFreshnessCacheEntry, cacheKey: string, now = Date.now()) {
+  const age = now - entry.cachedAt
+
+  return entry.cacheKey === cacheKey && age >= 0 && age < APP_FRESHNESS_CACHE_TTL_MS
+}
+
+function serializeFreshnessResult(result: AppFreshnessResult): SerializedAppFreshnessResult {
+  return {
+    ...result,
+    checkedAt: result.checkedAt.toISOString(),
+  }
+}
+
+function deserializeFreshnessResult(result: SerializedAppFreshnessResult): AppFreshnessResult {
+  return {
+    ...result,
+    checkedAt: new Date(result.checkedAt),
+  }
+}
+
+function isFreshnessStatus(value: unknown): value is AppFreshnessStatus {
+  return value === 'current' || value === 'different' || value === 'unknown'
+}
+
+function parseCachedFreshnessEntry(value: unknown): AppFreshnessCacheEntry | null {
+  if (!value || typeof value !== 'object') return null
+
+  const entry = value as Partial<AppFreshnessCacheEntry>
+  const result = entry.result as Partial<SerializedAppFreshnessResult> | undefined
+
+  if (
+    typeof entry.cachedAt !== 'number' ||
+    !Number.isFinite(entry.cachedAt) ||
+    typeof entry.cacheKey !== 'string' ||
+    !result ||
+    typeof result.checkedAt !== 'string' ||
+    typeof result.commitsAhead !== 'number' ||
+    typeof result.commitsBehind !== 'number' ||
+    typeof result.currentSha !== 'string' ||
+    typeof result.latestSha !== 'string' ||
+    !(typeof result.latestUrl === 'string' || result.latestUrl === null) ||
+    !isFreshnessStatus(result.status)
+  ) {
+    return null
+  }
+
+  return {
+    cachedAt: entry.cachedAt,
+    cacheKey: entry.cacheKey,
+    result: {
+      checkedAt: result.checkedAt,
+      commitsAhead: result.commitsAhead,
+      commitsBehind: result.commitsBehind,
+      currentSha: result.currentSha,
+      latestSha: result.latestSha,
+      latestUrl: result.latestUrl,
+      status: result.status,
+    },
+  }
+}
+
+function readCachedFreshness(cacheKey: string) {
+  if (memoryFreshnessCache && isFreshCacheEntry(memoryFreshnessCache, cacheKey)) {
+    return deserializeFreshnessResult(memoryFreshnessCache.result)
+  }
+
+  const storage = getAppVersionStorage()
+  const rawEntry = storage?.getItem(APP_FRESHNESS_CACHE_KEY)
+
+  if (!rawEntry) return null
+
+  try {
+    const entry = parseCachedFreshnessEntry(JSON.parse(rawEntry))
+
+    if (!entry || !isFreshCacheEntry(entry, cacheKey)) return null
+
+    memoryFreshnessCache = entry
+
+    return deserializeFreshnessResult(entry.result)
+  } catch {
+    return null
+  }
+}
+
+function writeCachedFreshness(cacheKey: string, result: AppFreshnessResult) {
+  const entry: AppFreshnessCacheEntry = {
+    cachedAt: Date.now(),
+    cacheKey,
+    result: serializeFreshnessResult(result),
+  }
+
+  memoryFreshnessCache = entry
+
+  try {
+    getAppVersionStorage()?.setItem(APP_FRESHNESS_CACHE_KEY, JSON.stringify(entry))
+  } catch {
+    // Browser storage may be disabled; the in-memory cache still deduplicates this tab.
+  }
+}
+
+export function clearAppFreshnessCache() {
+  memoryFreshnessCache = null
+  inFlightFreshnessCheck = null
+
+  try {
+    getAppVersionStorage()?.removeItem(APP_FRESHNESS_CACHE_KEY)
+  } catch {
+    // Best effort test/runtime reset.
+  }
 }
 
 export function compareAppFreshness(currentSha: string, latestSha: string): AppFreshnessStatus {
@@ -76,54 +226,120 @@ function parseGitHubCommitResponse(payload: unknown) {
   return { latestSha, latestUrl }
 }
 
-export async function checkUpstreamDevelopFreshness(
+function unknownFreshnessResult(
+  currentSha: string,
+  latestSha = '',
+  latestUrl: string | null = null,
+): AppFreshnessResult {
+  return {
+    checkedAt: new Date(),
+    commitsAhead: 0,
+    commitsBehind: 0,
+    currentSha,
+    latestSha,
+    latestUrl,
+    status: 'unknown',
+  }
+}
+
+function githubStatusReason(response: Response) {
+  return response.statusText ? `${response.status} ${response.statusText}` : String(response.status)
+}
+
+async function readGitHubJson(response: Response, endpoint: string) {
+  try {
+    return await response.json()
+  } catch {
+    warnGitHubFreshnessFallback(`GitHub ${endpoint} 响应不是有效 JSON，版本状态记为 unknown。`)
+
+    return null
+  }
+}
+
+async function fetchLatestDevelopCommit(fetcher: typeof fetch) {
+  const endpoint = 'commits/develop'
+  let response: Response
+
+  try {
+    response = await fetcher(`${GITHUB_REPO_API_URL}/${endpoint}`, GITHUB_REQUEST_INIT)
+  } catch (error) {
+    warnGitHubFreshnessFallback(
+      `GitHub ${endpoint} 请求失败：${error instanceof Error ? error.message : 'unknown error'}，版本状态记为 unknown。`,
+    )
+
+    return null
+  }
+
+  if (!response.ok) {
+    warnGitHubFreshnessFallback(
+      `GitHub ${endpoint} 返回 ${githubStatusReason(response)}，版本状态记为 unknown。`,
+    )
+
+    return null
+  }
+
+  const payload = await readGitHubJson(response, endpoint)
+  if (!payload) return null
+
+  const commit = parseGitHubCommitResponse(payload)
+
+  if (!commit.latestSha) {
+    warnGitHubFreshnessFallback(`GitHub ${endpoint} 响应缺少 SHA，版本状态记为 unknown。`)
+
+    return null
+  }
+
+  return commit
+}
+
+async function fetchDevelopComparison(fetcher: typeof fetch, currentSha: string) {
+  const endpoint = `compare/${encodeURIComponent(currentSha)}...develop`
+  let response: Response
+
+  try {
+    response = await fetcher(`${GITHUB_REPO_API_URL}/${endpoint}`, GITHUB_REQUEST_INIT)
+  } catch (error) {
+    warnGitHubFreshnessFallback(
+      `GitHub compare 请求失败：${error instanceof Error ? error.message : 'unknown error'}，版本状态记为 unknown。`,
+    )
+
+    return null
+  }
+
+  if (!response.ok) {
+    warnGitHubFreshnessFallback(
+      `GitHub compare 返回 ${githubStatusReason(response)}，版本状态记为 unknown。`,
+    )
+
+    return null
+  }
+
+  const payload = await readGitHubJson(response, 'compare')
+
+  return payload ? parseGitHubCompareResponse(payload) : null
+}
+
+async function checkUpstreamDevelopFreshnessUncached(
   fetcher: typeof fetch = fetch,
   currentSha = appCommitSha,
 ): Promise<AppFreshnessResult> {
-  const latestResponse = await fetcher(`${GITHUB_REPO_API_URL}/commits/develop`, {
-    cache: 'no-store',
-    headers: {
-      Accept: 'application/vnd.github+json',
-    },
-  })
+  const latestCommit = await fetchLatestDevelopCommit(fetcher)
 
-  if (!latestResponse.ok) {
-    throw new Error(`GitHub 返回 ${latestResponse.status}`)
+  if (!latestCommit) return unknownFreshnessResult(currentSha)
+
+  const { latestSha, latestUrl } = latestCommit
+
+  if (!normalizeSha(currentSha)) {
+    warnGitHubFreshnessFallback('当前构建缺少提交 SHA，版本状态记为 unknown。')
+
+    return unknownFreshnessResult(currentSha, latestSha, latestUrl)
   }
 
-  const { latestSha, latestUrl } = parseGitHubCommitResponse(await latestResponse.json())
+  const comparison = await fetchDevelopComparison(fetcher, currentSha)
 
-  if (!latestSha) {
-    throw new Error('GitHub 响应缺少 develop 提交 SHA')
-  }
+  if (!comparison) return unknownFreshnessResult(currentSha, latestSha, latestUrl)
 
-  const compareResponse = await fetcher(
-    `${GITHUB_REPO_API_URL}/compare/${encodeURIComponent(currentSha)}...develop`,
-    {
-      cache: 'no-store',
-      headers: {
-        Accept: 'application/vnd.github+json',
-      },
-    },
-  )
-
-  if (!compareResponse.ok && compareResponse.status === 404) {
-    return {
-      checkedAt: new Date(),
-      commitsAhead: 0,
-      commitsBehind: 0,
-      currentSha,
-      latestSha,
-      latestUrl,
-      status: 'unknown',
-    }
-  }
-
-  if (!compareResponse.ok) {
-    throw new Error(`GitHub 返回 ${compareResponse.status}`)
-  }
-
-  const { commitsAhead, commitsBehind } = parseGitHubCompareResponse(await compareResponse.json())
+  const { commitsAhead, commitsBehind } = comparison
 
   return {
     checkedAt: new Date(),
@@ -134,6 +350,33 @@ export async function checkUpstreamDevelopFreshness(
     latestUrl,
     status: commitsBehind > 0 ? 'different' : 'current',
   }
+}
+
+export async function checkUpstreamDevelopFreshness(
+  fetcher: typeof fetch = fetch,
+  currentSha = appCommitSha,
+): Promise<AppFreshnessResult> {
+  const cacheKey = freshnessCacheKey(currentSha)
+  const cachedResult = readCachedFreshness(cacheKey)
+
+  if (cachedResult) return cachedResult
+  if (inFlightFreshnessCheck?.cacheKey === cacheKey) return inFlightFreshnessCheck.promise
+
+  const promise = checkUpstreamDevelopFreshnessUncached(fetcher, currentSha)
+    .then((result) => {
+      writeCachedFreshness(cacheKey, result)
+
+      return result
+    })
+    .finally(() => {
+      if (inFlightFreshnessCheck?.promise === promise) {
+        inFlightFreshnessCheck = null
+      }
+    })
+
+  inFlightFreshnessCheck = { cacheKey, promise }
+
+  return promise
 }
 
 export function formatCommitLabel(sha: string) {

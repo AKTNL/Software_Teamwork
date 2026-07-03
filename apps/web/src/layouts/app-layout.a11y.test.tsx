@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { AnchorHTMLAttributes, ReactNode, Ref } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -101,6 +101,7 @@ describe('AppLayout accessibility smoke', () => {
 
     const nav = screen.getByRole('navigation')
     const navLinks = within(nav).getAllByRole('link')
+    const currentLabel = screen.getByText('智能问答')
     const versionButton = screen.getByRole('button', { name: /^前端版本 v\d+\.\d+\.\d+/ })
     const helpButton = screen.getByRole('button', { name: '打开帮助' })
     const logoutButton = screen.getByRole('button', { name: '退出登录' })
@@ -109,9 +110,14 @@ describe('AppLayout accessibility smoke', () => {
     navLinks.forEach((link) => {
       expect(link).toHaveAccessibleName(/.+/)
     })
+    expect(currentLabel.compareDocumentPosition(versionButton)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
     expect(versionButton).toHaveTextContent(/^v\d+\.\d+\.\d+$/)
     expect(logoutButton).toHaveAccessibleName(/.+/)
 
+    await keyboard.tab()
+    expect(versionButton).toHaveFocus()
     await keyboard.tab()
     expect(navLinks[0]).toHaveFocus()
     await keyboard.tab()
@@ -120,8 +126,6 @@ describe('AppLayout accessibility smoke', () => {
     expect(routerMocks.navigate).toHaveBeenCalledWith({ to: '/reports' })
     await keyboard.tab()
     expect(navLinks[2]).toHaveFocus()
-    await keyboard.tab()
-    expect(versionButton).toHaveFocus()
     await keyboard.tab()
     expect(helpButton).toHaveFocus()
     await keyboard.tab()
@@ -195,5 +199,36 @@ describe('AppLayout accessibility smoke', () => {
     expect(screen.getByText('2 个')).toBeVisible()
     expect(screen.getByText(APP_UPDATE_COMMAND)).toBeVisible()
     expect(checkLatest).toHaveBeenCalledOnce()
+  })
+
+  it('does not start duplicate version checks while one is in flight', async () => {
+    let resolveCheck!: (value: AppFreshnessResult) => void
+    const checkLatest = vi.fn(
+      () =>
+        new Promise<AppFreshnessResult>((resolve) => {
+          resolveCheck = resolve
+        }),
+    )
+    const pointer = userEvent.setup()
+
+    renderWithProviders(<AppVersionBadge checkLatest={checkLatest} />)
+
+    const versionButton = screen.getByRole('button', { name: /^前端版本/ })
+    await pointer.click(versionButton)
+    await pointer.click(versionButton)
+
+    expect(checkLatest).toHaveBeenCalledOnce()
+
+    await act(async () => {
+      resolveCheck({
+        checkedAt: new Date('2026-07-03T00:00:00.000Z'),
+        commitsAhead: 0,
+        commitsBehind: 0,
+        currentSha: '1111111111111111111111111111111111111111',
+        latestSha: '1111111111111111111111111111111111111111',
+        latestUrl: 'https://github.com/Sakayori-Iroha-168/Software_Teamwork/commit/1111111',
+        status: 'current',
+      })
+    })
   })
 })

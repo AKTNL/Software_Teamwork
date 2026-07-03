@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, WifiOff } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import { badgeVariants } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -87,18 +87,30 @@ export function AppVersionBadge({
 }: AppVersionBadgeProps) {
   const label = formatAppVersion(version)
   const [state, setState] = useState<FreshnessState>({ status: 'idle' })
+  const requestRef = useRef<Promise<void> | null>(null)
 
   const handleCheck = useCallback(async () => {
+    if (requestRef.current) return requestRef.current
+
     setState({ status: 'checking' })
-    try {
-      const result = await checkLatest()
-      setState({ result, status: 'result' })
-    } catch (error) {
-      setState({
-        message: error instanceof Error ? error.message : '无法连接 GitHub',
-        status: 'error',
+
+    const request = checkLatest()
+      .then((result) => {
+        setState({ result, status: 'result' })
       })
-    }
+      .catch((error) => {
+        setState({
+          message: error instanceof Error ? error.message : '无法连接 GitHub',
+          status: 'error',
+        })
+      })
+      .finally(() => {
+        requestRef.current = null
+      })
+
+    requestRef.current = request
+
+    return request
   }, [checkLatest])
 
   const isDifferent = state.status === 'result' && state.result.status === 'different'
