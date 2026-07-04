@@ -2855,6 +2855,8 @@ paths:
           $ref: '#/components/responses/Error'
         '403':
           $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
         '501':
           $ref: '#/components/responses/Error'
   /api/v1/admin/metrics:
@@ -2901,6 +2903,8 @@ paths:
         '401':
           $ref: '#/components/responses/Error'
         '403':
+          $ref: '#/components/responses/Error'
+        '502':
           $ref: '#/components/responses/Error'
         '501':
           $ref: '#/components/responses/Error'

@@ -6220,6 +6220,7 @@ export interface operations {
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             501: components["responses"]["Error"];
+            502: components["responses"]["Error"];
         };
     };
     getAdminMetrics: {
@@ -6249,6 +6250,7 @@ export interface operations {
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             501: components["responses"]["Error"];
+            502: components["responses"]["Error"];
         };
     };
 }
